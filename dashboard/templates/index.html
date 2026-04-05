@@ -28,7 +28,6 @@
     overflow-x: hidden;
   }
 
-  /* Animated grid background */
   body::before {
     content: '';
     position: fixed;
@@ -44,7 +43,6 @@
 
   .container { position: relative; z-index: 1; padding: 20px; max-width: 1400px; margin: 0 auto; }
 
-  /* Header */
   header {
     border-bottom: 1px solid var(--green);
     padding-bottom: 16px;
@@ -87,7 +85,6 @@
     50% { opacity: 0.3; }
   }
 
-  /* Stat cards */
   .stats-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
@@ -136,7 +133,6 @@
   .stat-card.warning .stat-value { color: var(--yellow); text-shadow: 0 0 15px rgba(255,204,0,0.4); }
   .stat-card.info .stat-value { color: var(--blue); text-shadow: 0 0 15px rgba(0,204,255,0.4); }
 
-  /* Main grid */
   .main-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -163,7 +159,6 @@
     align-items: center;
   }
 
-  /* Table */
   .threat-table { width: 100%; border-collapse: collapse; font-size: 12px; }
   .threat-table th {
     text-align: left;
@@ -177,16 +172,10 @@
   .threat-table td { padding: 10px 8px; border-bottom: 1px solid rgba(10,42,74,0.5); }
   .threat-table tr:hover td { background: rgba(0,255,136,0.03); }
 
-  .badge {
-    padding: 3px 8px;
-    font-size: 10px;
-    letter-spacing: 1px;
-    border-radius: 2px;
-  }
+  .badge { padding: 3px 8px; font-size: 10px; letter-spacing: 1px; border-radius: 2px; }
   .badge-threat { background: rgba(255,51,102,0.15); color: var(--red); border: 1px solid rgba(255,51,102,0.3); }
   .badge-safe { background: rgba(0,255,136,0.1); color: var(--green); border: 1px solid rgba(0,255,136,0.2); }
 
-  /* Scan button */
   .scan-btn {
     background: transparent;
     border: 1px solid var(--green);
@@ -199,12 +188,9 @@
     transition: all 0.3s;
     text-transform: uppercase;
   }
-  .scan-btn:hover {
-    background: rgba(0,255,136,0.1);
-    box-shadow: 0 0 20px rgba(0,255,136,0.3);
-  }
+  .scan-btn:hover { background: rgba(0,255,136,0.1); box-shadow: 0 0 20px rgba(0,255,136,0.3); }
+  .scan-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
-  /* Log feed */
   .log-feed {
     font-size: 11px;
     line-height: 2;
@@ -220,7 +206,6 @@
   .log-event { color: var(--green); }
   .log-ip { color: var(--text); }
 
-  /* Terminal */
   .terminal {
     background: #010a10;
     border: 1px solid var(--border);
@@ -237,8 +222,10 @@
   .terminal .err { color: var(--red); }
 
   .scan-section { text-align: center; padding: 20px; }
-
   #clock { color: var(--blue); font-size: 13px; }
+
+  .scanning { animation: blink 0.5s infinite; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
 </style>
 </head>
 <body>
@@ -309,7 +296,7 @@
     <div class="panel-header" style="justify-content:center">
       <span>◉ SCAN CONTROL</span>
     </div>
-    <button class="scan-btn" onclick="runScan()">▶ INITIATE SCAN</button>
+    <button class="scan-btn" id="scan-btn" onclick="runScan()">▶ INITIATE SCAN</button>
     <div class="terminal" id="terminal">
       <p class="cmd">$ CloudThreat AI v1.0 — Ready</p>
       <p class="out">Awaiting scan command...</p>
@@ -319,7 +306,6 @@
 </div>
 
 <script>
-  // Clock
   function updateClock() {
     const now = new Date();
     document.getElementById('clock').textContent = now.toUTCString().slice(0,25);
@@ -327,7 +313,6 @@
   setInterval(updateClock, 1000);
   updateClock();
 
-  // Load data
   async function loadData() {
     try {
       const [threatsRes, logsRes] = await Promise.all([
@@ -337,7 +322,6 @@
       const threats = await threatsRes.json();
       const logs = await logsRes.json();
 
-      // Stats
       document.getElementById('total-events').textContent = logs.length;
       document.getElementById('total-threats').textContent = threats.length;
       
@@ -350,7 +334,6 @@
       const uniqueIPs = new Set(logs.map(l => l.sourceIP)).size;
       document.getElementById('unique-ips').textContent = uniqueIPs;
 
-      // Threat table
       const tbody = document.getElementById('threat-body');
       document.getElementById('threat-count').textContent = threats.length + ' THREATS';
       if (threats.length > 0) {
@@ -367,7 +350,6 @@
         tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--green);padding:20px">✓ NO THREATS DETECTED</td></tr>';
       }
 
-      // Log feed
       const feed = document.getElementById('log-feed');
       document.getElementById('log-count').textContent = logs.length + ' EVENTS';
       if (logs.length > 0) {
@@ -379,31 +361,44 @@
           </div>
         `).join('');
       }
-
     } catch(e) {
       console.error(e);
     }
   }
 
-  // Scan
-  function runScan() {
+  async function runScan() {
+    const btn = document.getElementById('scan-btn');
     const terminal = document.getElementById('terminal');
+    
+    btn.disabled = true;
+    btn.textContent = '⟳ SCANNING...';
+    btn.classList.add('scanning');
+    
     terminal.innerHTML = `
       <p class="cmd">$ Initiating CloudThreat AI scan...</p>
       <p class="out">[*] Connecting to AWS CloudTrail...</p>
       <p class="out">[*] Fetching events from ap-southeast-1...</p>
       <p class="out">[*] Running Isolation Forest ML model...</p>
     `;
-    setTimeout(() => {
-      loadData();
-      terminal.innerHTML += `
-        <p class="cmd">[+] Scan complete!</p>
-        <p class="out">[*] Dashboard updated.</p>
-      `;
-    }, 2000);
+
+    try {
+      const res = await fetch('/api/scan');
+      const data = await res.json();
+      
+      terminal.innerHTML += `<p class="cmd">[+] Scan complete!</p>`;
+      terminal.innerHTML += `<p class="out">${data.output}</p>`;
+      
+      await loadData();
+      
+    } catch(e) {
+      terminal.innerHTML += `<p class="err">[-] Scan failed: ${e}</p>`;
+    }
+
+    btn.disabled = false;
+    btn.textContent = '▶ INITIATE SCAN';
+    btn.classList.remove('scanning');
   }
 
-  // Auto load
   loadData();
   setInterval(loadData, 30000);
 </script>
