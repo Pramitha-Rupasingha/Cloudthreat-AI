@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CloudThreat AI</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap');
+  
+  :root {
+    --bg: #020b14;
+    --bg2: #041022;
+    --green: #00ff88;
+    --red: #ff3366;
+    --blue: #00ccff;
+    --yellow: #ffcc00;
+    --border: #0a2a4a;
+    --text: #8baabf;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Share Tech Mono', monospace;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Animated grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background-image: 
+      linear-gradient(rgba(0,255,136,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,255,136,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container { position: relative; z-index: 1; padding: 20px; max-width: 1400px; margin: 0 auto; }
+
+  /* Header */
+  header {
+    border-bottom: 1px solid var(--green);
+    padding-bottom: 16px;
+    margin-bottom: 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .logo {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 24px;
+    font-weight: 900;
+    color: var(--green);
+    text-shadow: 0 0 20px rgba(0,255,136,0.5);
+    letter-spacing: 3px;
+  }
+
+  .logo span { color: var(--blue); }
+
+  .status-bar {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+    font-size: 12px;
+  }
+
+  .status-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 8px var(--green);
+    animation: pulse 2s infinite;
+    display: inline-block;
+    margin-right: 6px;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  /* Stat cards */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .stat-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-top: 2px solid var(--green);
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: linear-gradient(135deg, rgba(0,255,136,0.03) 0%, transparent 60%);
+  }
+
+  .stat-card.danger { border-top-color: var(--red); }
+  .stat-card.warning { border-top-color: var(--yellow); }
+  .stat-card.info { border-top-color: var(--blue); }
+
+  .stat-label {
+    font-size: 11px;
+    color: var(--text);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  .stat-value {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 36px;
+    font-weight: 700;
+    color: var(--green);
+    text-shadow: 0 0 15px rgba(0,255,136,0.4);
+  }
+
+  .stat-card.danger .stat-value { color: var(--red); text-shadow: 0 0 15px rgba(255,51,102,0.4); }
+  .stat-card.warning .stat-value { color: var(--yellow); text-shadow: 0 0 15px rgba(255,204,0,0.4); }
+  .stat-card.info .stat-value { color: var(--blue); text-shadow: 0 0 15px rgba(0,204,255,0.4); }
+
+  /* Main grid */
+  .main-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .panel {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    padding: 20px;
+  }
+
+  .panel-header {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 12px;
+    color: var(--green);
+    letter-spacing: 2px;
+    margin-bottom: 16px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  /* Table */
+  .threat-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .threat-table th {
+    text-align: left;
+    padding: 8px;
+    color: var(--blue);
+    border-bottom: 1px solid var(--border);
+    letter-spacing: 1px;
+    font-size: 10px;
+    text-transform: uppercase;
+  }
+  .threat-table td { padding: 10px 8px; border-bottom: 1px solid rgba(10,42,74,0.5); }
+  .threat-table tr:hover td { background: rgba(0,255,136,0.03); }
+
+  .badge {
+    padding: 3px 8px;
+    font-size: 10px;
+    letter-spacing: 1px;
+    border-radius: 2px;
+  }
+  .badge-threat { background: rgba(255,51,102,0.15); color: var(--red); border: 1px solid rgba(255,51,102,0.3); }
+  .badge-safe { background: rgba(0,255,136,0.1); color: var(--green); border: 1px solid rgba(0,255,136,0.2); }
+
+  /* Scan button */
+  .scan-btn {
+    background: transparent;
+    border: 1px solid var(--green);
+    color: var(--green);
+    padding: 10px 24px;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 12px;
+    letter-spacing: 2px;
+    cursor: pointer;
+    transition: all 0.3s;
+    text-transform: uppercase;
+  }
+  .scan-btn:hover {
+    background: rgba(0,255,136,0.1);
+    box-shadow: 0 0 20px rgba(0,255,136,0.3);
+  }
+
+  /* Log feed */
+  .log-feed {
+    font-size: 11px;
+    line-height: 2;
+    max-height: 300px;
+    overflow-y: auto;
+  }
+  .log-feed::-webkit-scrollbar { width: 4px; }
+  .log-feed::-webkit-scrollbar-track { background: var(--bg); }
+  .log-feed::-webkit-scrollbar-thumb { background: var(--green); }
+
+  .log-line { display: flex; gap: 12px; }
+  .log-time { color: var(--blue); min-width: 80px; }
+  .log-event { color: var(--green); }
+  .log-ip { color: var(--text); }
+
+  /* Terminal */
+  .terminal {
+    background: #010a10;
+    border: 1px solid var(--border);
+    padding: 16px;
+    font-size: 12px;
+    line-height: 1.8;
+    max-height: 200px;
+    overflow-y: auto;
+    margin-top: 16px;
+  }
+  .terminal p { margin: 0; }
+  .terminal .cmd { color: var(--green); }
+  .terminal .out { color: var(--text); }
+  .terminal .err { color: var(--red); }
+
+  .scan-section { text-align: center; padding: 20px; }
+
+  #clock { color: var(--blue); font-size: 13px; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <div class="logo">CLOUD<span>THREAT</span> AI</div>
+    <div class="status-bar">
+      <span><span class="status-dot"></span>SYSTEM ONLINE</span>
+      <span id="clock"></span>
+      <span style="color:var(--green)">AWS: ap-southeast-1</span>
+    </div>
+  </header>
+
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-label">Total Events</div>
+      <div class="stat-value" id="total-events">--</div>
+    </div>
+    <div class="stat-card danger">
+      <div class="stat-label">Threats Detected</div>
+      <div class="stat-value" id="total-threats">--</div>
+    </div>
+    <div class="stat-card warning">
+      <div class="stat-label">Unusual Hours</div>
+      <div class="stat-value" id="unusual-count">--</div>
+    </div>
+    <div class="stat-card info">
+      <div class="stat-label">Unique IPs</div>
+      <div class="stat-value" id="unique-ips">--</div>
+    </div>
+  </div>
+
+  <div class="main-grid">
+    <div class="panel">
+      <div class="panel-header">
+        <span>⚠ THREAT LOG</span>
+        <span style="color:var(--text);font-size:10px" id="threat-count">0 THREATS</span>
+      </div>
+      <table class="threat-table">
+        <thead>
+          <tr>
+            <th>Time</th>
+            <th>Event</th>
+            <th>Source IP</th>
+            <th>User</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="threat-body">
+          <tr><td colspan="5" style="text-align:center;color:var(--green);padding:20px">✓ NO THREATS DETECTED</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="panel">
+      <div class="panel-header">
+        <span>◈ LIVE EVENT FEED</span>
+        <span style="color:var(--text);font-size:10px" id="log-count">0 EVENTS</span>
+      </div>
+      <div class="log-feed" id="log-feed">
+        <p style="color:var(--text)">Waiting for data...</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel scan-section">
+    <div class="panel-header" style="justify-content:center">
+      <span>◉ SCAN CONTROL</span>
+    </div>
+    <button class="scan-btn" onclick="runScan()">▶ INITIATE SCAN</button>
+    <div class="terminal" id="terminal">
+      <p class="cmd">$ CloudThreat AI v1.0 — Ready</p>
+      <p class="out">Awaiting scan command...</p>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  // Clock
+  function updateClock() {
+    const now = new Date();
+    document.getElementById('clock').textContent = now.toUTCString().slice(0,25);
+  }
+  setInterval(updateClock, 1000);
+  updateClock();
+
+  // Load data
+  async function loadData() {
+    try {
+      const [threatsRes, logsRes] = await Promise.all([
+        fetch('/api/threats'),
+        fetch('/api/logs')
+      ]);
+      const threats = await threatsRes.json();
+      const logs = await logsRes.json();
+
+      // Stats
+      document.getElementById('total-events').textContent = logs.length;
+      document.getElementById('total-threats').textContent = threats.length;
+      
+      const unusualCount = logs.filter(l => {
+        const h = new Date(l.eventTime).getHours();
+        return h < 8 || h > 18;
+      }).length;
+      document.getElementById('unusual-count').textContent = unusualCount;
+      
+      const uniqueIPs = new Set(logs.map(l => l.sourceIP)).size;
+      document.getElementById('unique-ips').textContent = uniqueIPs;
+
+      // Threat table
+      const tbody = document.getElementById('threat-body');
+      document.getElementById('threat-count').textContent = threats.length + ' THREATS';
+      if (threats.length > 0) {
+        tbody.innerHTML = threats.map(t => `
+          <tr>
+            <td>${new Date(t.eventTime).toLocaleTimeString()}</td>
+            <td style="color:var(--yellow)">${t.eventName}</td>
+            <td style="color:var(--blue)">${t.sourceIP}</td>
+            <td>${t.userName}</td>
+            <td><span class="badge badge-threat">THREAT</span></td>
+          </tr>
+        `).join('');
+      } else {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--green);padding:20px">✓ NO THREATS DETECTED</td></tr>';
+      }
+
+      // Log feed
+      const feed = document.getElementById('log-feed');
+      document.getElementById('log-count').textContent = logs.length + ' EVENTS';
+      if (logs.length > 0) {
+        feed.innerHTML = logs.map(l => `
+          <div class="log-line">
+            <span class="log-time">${new Date(l.eventTime).toLocaleTimeString()}</span>
+            <span class="log-event">${l.eventName}</span>
+            <span class="log-ip">${l.sourceIP}</span>
+          </div>
+        `).join('');
+      }
+
+    } catch(e) {
+      console.error(e);
+    }
+  }
+
+  // Scan
+  function runScan() {
+    const terminal = document.getElementById('terminal');
+    terminal.innerHTML = `
+      <p class="cmd">$ Initiating CloudThreat AI scan...</p>
+      <p class="out">[*] Connecting to AWS CloudTrail...</p>
+      <p class="out">[*] Fetching events from ap-southeast-1...</p>
+      <p class="out">[*] Running Isolation Forest ML model...</p>
+    `;
+    setTimeout(() => {
+      loadData();
+      terminal.innerHTML += `
+        <p class="cmd">[+] Scan complete!</p>
+        <p class="out">[*] Dashboard updated.</p>
+      `;
+    }, 2000);
+  }
+
+  // Auto load
+  loadData();
+  setInterval(loadData, 30000);
+</script>
+</body>
+</html>
